@@ -1,12 +1,12 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Scissors, Users, Wallet, BarChart3, Plus } from "lucide-react";
+import { LayoutDashboard, Scissors, Users, Wallet, Settings } from "lucide-react";
 
 const navItems = [
   { path: "/dashboard", icon: LayoutDashboard, label: "Inicio" },
   { path: "/servicios", icon: Scissors, label: "Servicios" },
   { path: "/clientes", icon: Users, label: "Clientes" },
   { path: "/caja", icon: Wallet, label: "Caja" },
-  { path: "/estadisticas", icon: BarChart3, label: "Stats" },
+  { path: "/configuracion", icon: Settings, label: "Config" },
 ];
 
 const BottomNav = () => {
