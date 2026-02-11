@@ -41,6 +41,44 @@ export type Database = {
         }
         Relationships: []
       }
+      barberos: {
+        Row: {
+          activo: boolean
+          barberia_id: string
+          created_at: string
+          foto_url: string | null
+          id: string
+          nombre: string
+          porcentaje_comision: number
+        }
+        Insert: {
+          activo?: boolean
+          barberia_id: string
+          created_at?: string
+          foto_url?: string | null
+          id?: string
+          nombre: string
+          porcentaje_comision?: number
+        }
+        Update: {
+          activo?: boolean
+          barberia_id?: string
+          created_at?: string
+          foto_url?: string | null
+          id?: string
+          nombre?: string
+          porcentaje_comision?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "barberos_barberia_id_fkey"
+            columns: ["barberia_id"]
+            isOneToOne: false
+            referencedRelation: "barberias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cierres_caja: {
         Row: {
           barberia_id: string
@@ -86,6 +124,7 @@ export type Database = {
         Row: {
           barberia_id: string
           created_at: string
+          email: string | null
           id: string
           nombre: string
           notas: string | null
@@ -94,6 +133,7 @@ export type Database = {
         Insert: {
           barberia_id: string
           created_at?: string
+          email?: string | null
           id?: string
           nombre: string
           notas?: string | null
@@ -102,6 +142,7 @@ export type Database = {
         Update: {
           barberia_id?: string
           created_at?: string
+          email?: string | null
           id?: string
           nombre?: string
           notas?: string | null
@@ -272,6 +313,7 @@ export type Database = {
           created_at: string
           fecha: string
           id: string
+          metodo_pago: string
           precio: number
           servicio_id: string
         }
@@ -283,6 +325,7 @@ export type Database = {
           created_at?: string
           fecha?: string
           id?: string
+          metodo_pago?: string
           precio: number
           servicio_id: string
         }
@@ -294,6 +337,7 @@ export type Database = {
           created_at?: string
           fecha?: string
           id?: string
+          metodo_pago?: string
           precio?: number
           servicio_id?: string
         }
@@ -309,7 +353,7 @@ export type Database = {
             foreignKeyName: "trabajos_barbero_id_fkey"
             columns: ["barbero_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "barberos"
             referencedColumns: ["id"]
           },
           {
