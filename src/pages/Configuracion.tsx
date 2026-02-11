@@ -5,9 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
-  { icon: Store, label: "Datos de la barbería", desc: "Nombre, teléfono, dirección" },
-  { icon: Users, label: "Barberos", desc: "Gestionar equipo y comisiones" },
-  { icon: KeyRound, label: "Códigos de invitación", desc: "Generar y gestionar códigos" },
+  { icon: Store, label: "Datos de la barbería", desc: "Nombre, teléfono, dirección", path: "" },
+  { icon: Users, label: "Barberos", desc: "Gestionar equipo y comisiones", path: "/barberos" },
+  { icon: KeyRound, label: "Códigos de invitación", desc: "Generar y gestionar códigos", path: "" },
 ];
 
 const Configuracion = () => {
@@ -27,7 +27,11 @@ const Configuracion = () => {
         {menuItems
           .filter((item) => role === "owner" || item.label === "Datos de la barbería")
           .map((item) => (
-            <Card key={item.label} className="border-border bg-card cursor-pointer hover:bg-secondary/50 transition-colors">
+            <Card
+              key={item.label}
+              className="border-border bg-card cursor-pointer hover:bg-secondary/50 transition-colors"
+              onClick={() => item.path && navigate(item.path)}
+            >
               <CardContent className="flex items-center gap-3 p-4">
                 <item.icon className="h-5 w-5 text-primary" />
                 <div>
