@@ -27,6 +27,7 @@ import {
   Banknote,
   CreditCard,
   Users,
+  Lock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ const Caja = () => {
   const [gastoDialogOpen, setGastoDialogOpen] = useState(false);
   const [gastoDesc, setGastoDesc] = useState("");
   const [gastoMonto, setGastoMonto] = useState("");
+  const [cierreDialogOpen, setCierreDialogOpen] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [period, setPeriod] = useState<Period>("dia");
@@ -129,6 +131,23 @@ const Caja = () => {
     enabled: !!barberiaId,
   });
 
+  // Fetch cierres for history
+  const { data: cierres = [] } = useQuery({
+    queryKey: ["caja-cierres", barberiaId],
+    queryFn: async () => {
+      if (!barberiaId) return [];
+      const { data, error } = await supabase
+        .from("cierres_caja")
+        .select("*")
+        .eq("barberia_id", barberiaId)
+        .order("fecha", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!barberiaId,
+  });
+
   // Aggregates
   const ingresos = trabajos.reduce((s, t) => s + Number(t.precio), 0);
   const comisiones = trabajos.reduce((s, t) => s + Number(t.comision), 0);
@@ -175,6 +194,42 @@ const Caja = () => {
     },
     onError: (err: any) => toast.error(err.message),
   });
+
+  // Cierre mutation
+  const cierreMutation = useMutation({
+    mutationFn: async () => {
+      if (!barberiaId) throw new Error("Sin barbería");
+      if (period !== "dia") throw new Error("Solo se puede cerrar por día");
+      const fechaCierre = format(selectedDate, "yyyy-MM-dd");
+      
+      // Check if already closed
+      const { data: existing } = await supabase
+        .from("cierres_caja")
+        .select("id")
+        .eq("barberia_id", barberiaId)
+        .eq("fecha", fechaCierre)
+        .maybeSingle();
+      
+      if (existing) throw new Error("Este día ya fue cerrado");
+      
+      const { error } = await supabase.from("cierres_caja").insert({
+        barberia_id: barberiaId,
+        fecha: fechaCierre,
+        total_ingresos: ingresos,
+        total_comisiones: comisiones,
+        total_gastos: totalGastos,
+        ganancia_neta: ganancia,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["caja-cierres"] });
+      toast.success("Caja cerrada correctamente");
+      setCierreDialogOpen(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
 
   return (
     <div className="px-4 pt-6 pb-24">
@@ -312,16 +367,54 @@ const Caja = () => {
       )}
 
       {/* Actions */}
-      <div className="flex gap-3">
-        <Button className="flex-1 gap-1" onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4" /> Nuevo trabajo
-        </Button>
-        {role === "owner" && (
-          <Button variant="secondary" className="flex-1 gap-1" onClick={() => setGastoDialogOpen(true)}>
-            <ArrowDownCircle className="h-4 w-4" /> Gasto
+      <div className="flex flex-col gap-3 mb-6">
+        <div className="flex gap-3">
+          <Button className="flex-1 gap-1" onClick={() => setDialogOpen(true)}>
+            <Plus className="h-4 w-4" /> Nuevo trabajo
+          </Button>
+          {role === "owner" && (
+            <Button variant="secondary" className="flex-1 gap-1" onClick={() => setGastoDialogOpen(true)}>
+              <ArrowDownCircle className="h-4 w-4" /> Gasto
+            </Button>
+          )}
+        </div>
+        {role === "owner" && period === "dia" && (
+          <Button 
+            variant="outline" 
+            className="gap-1 border-primary text-primary hover:bg-primary/5"
+            onClick={() => setCierreDialogOpen(true)}
+            disabled={cierreMutation.isPending}
+          >
+            <Lock className="h-4 w-4" /> Cerrar caja
           </Button>
         )}
       </div>
+
+      {/* Historial de cierres */}
+      {role === "owner" && cierres.length > 0 && (
+        <Card className="border-border bg-card mb-4">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground mb-3 font-semibold uppercase tracking-wide">
+              Últimos cierres
+            </p>
+            <div className="space-y-2">
+              {cierres.slice(0, 5).map((cierre: any) => (
+                <div key={cierre.id} className="flex items-center justify-between text-sm border-t pt-2 first:border-t-0 first:pt-0">
+                  <div>
+                    <p className="font-medium">{format(new Date(cierre.fecha), "d MMM yyyy", { locale: es })}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Ingresos: ${cierre.total_ingresos} · Gastos: ${cierre.total_gastos}
+                    </p>
+                  </div>
+                  <span className={cn("font-medium text-sm", cierre.ganancia_neta >= 0 ? "text-primary" : "text-destructive")}>
+                    ${cierre.ganancia_neta}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <NuevoTrabajoDialog open={dialogOpen} onOpenChange={setDialogOpen} />
 
@@ -355,6 +448,51 @@ const Caja = () => {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cierre Dialog */}
+      <Dialog open={cierreDialogOpen} onOpenChange={setCierreDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar cierre de caja</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              ¿Deseas cerrar la caja para {format(selectedDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es })}?
+            </p>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="border rounded-lg p-3">
+                <p className="text-xs text-muted-foreground">Ingresos</p>
+                <p className="font-bold text-primary">${ingresos}</p>
+              </div>
+              <div className="border rounded-lg p-3">
+                <p className="text-xs text-muted-foreground">Comisiones</p>
+                <p className="font-bold text-destructive">${comisiones}</p>
+              </div>
+              <div className="border rounded-lg p-3">
+                <p className="text-xs text-muted-foreground">Gastos</p>
+                <p className="font-bold text-destructive">${totalGastos}</p>
+              </div>
+              <div className="border rounded-lg p-3">
+                <p className="text-xs text-muted-foreground">Ganancia neta</p>
+                <p className={cn("font-bold", ganancia >= 0 ? "text-primary" : "text-destructive")}>
+                  ${ganancia}
+                </p>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="secondary" type="button">Cancelar</Button>
+            </DialogClose>
+            <Button 
+              onClick={() => cierreMutation.mutate()} 
+              disabled={cierreMutation.isPending}
+            >
+              {cierreMutation.isPending ? "Cerrando..." : "Cerrar caja"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
