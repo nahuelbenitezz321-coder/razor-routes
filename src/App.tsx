@@ -14,6 +14,8 @@ import Caja from "./pages/Caja";
 import Estadisticas from "./pages/Estadisticas";
 import Configuracion from "./pages/Configuracion";
 import Barberos from "./pages/Barberos";
+import CodigosInvitacion from "./pages/CodigosInvitacion";
+import DatosBarberia from "./pages/DatosBarberia";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +44,8 @@ const App = () => (
               <Route path="/estadisticas" element={<Estadisticas />} />
               <Route path="/configuracion" element={<Configuracion />} />
               <Route path="/barberos" element={<Barberos />} />
+              <Route path="/codigos-invitacion" element={<CodigosInvitacion />} />
+              <Route path="/datos-barberia" element={<DatosBarberia />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
