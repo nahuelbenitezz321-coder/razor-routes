@@ -5,9 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const menuItems = [
-  { icon: Store, label: "Datos de la barbería", desc: "Nombre, teléfono, dirección", path: "" },
+  { icon: Store, label: "Datos de la barbería", desc: "Nombre, teléfono, dirección", path: "/datos-barberia" },
   { icon: Users, label: "Barberos", desc: "Gestionar equipo y comisiones", path: "/barberos" },
-  { icon: KeyRound, label: "Códigos de invitación", desc: "Generar y gestionar códigos", path: "" },
+  { icon: KeyRound, label: "Códigos de invitación", desc: "Generar y gestionar códigos", path: "/codigos-invitacion" },
 ];
 
 const Configuracion = () => {
