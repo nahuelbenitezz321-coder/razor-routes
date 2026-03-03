@@ -47,17 +47,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          await fetchUserData(session.user.id);
+          // Use setTimeout to avoid blocking signUp promise resolution
+          setTimeout(() => {
+            fetchUserData(session.user.id).then(() => setLoading(false));
+          }, 0);
         } else {
           setRole(null);
           setBarberiaId(null);
           setProfileId(null);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 
