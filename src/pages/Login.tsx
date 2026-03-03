@@ -74,63 +74,25 @@ const Login = () => {
       const userId = authData.user.id;
 
       if (regCode.trim()) {
-        // JOIN existing barberia via invitation code
-        const { data: codeData, error: codeError } = await supabase
-          .from("codigos_invitacion")
-          .select("id, barberia_id")
-          .eq("codigo", regCode.trim())
-          .eq("activo", true)
-          .is("usado_por", null)
-          .maybeSingle();
-
-        if (codeError || !codeData) throw new Error("Código de invitación inválido o usado");
-
-        // Create profile
-        await supabase.from("profiles").insert({
-          user_id: userId,
-          barberia_id: codeData.barberia_id,
-          full_name: regName,
+        // JOIN existing barberia via invitation code (atomic server-side)
+        const { error: rpcError } = await supabase.rpc("register_barber", {
+          _user_id: userId,
+          _full_name: regName,
+          _codigo: regCode.trim(),
         });
-
-        // Assign barber role
-        await supabase.from("user_roles").insert({
-          user_id: userId,
-          role: "barber" as const,
-        });
-
-        // Mark code as used
-        await supabase
-          .from("codigos_invitacion")
-          .update({ usado_por: userId, activo: false })
-          .eq("id", codeData.id);
+        if (rpcError) throw rpcError;
       } else {
-        // CREATE new barberia (owner flow)
+        // CREATE new barberia (owner flow, atomic server-side)
         if (!barberiaName.trim()) throw new Error("El nombre de la barbería es obligatorio");
 
-        const { data: barberiaData, error: barberiaError } = await supabase
-          .from("barberias")
-          .insert({
-            nombre: barberiaName,
-            telefono: barberiaTel || null,
-            direccion: barberiaDir || null,
-          })
-          .select("id")
-          .single();
-
-        if (barberiaError) throw barberiaError;
-
-        // Create profile
-        await supabase.from("profiles").insert({
-          user_id: userId,
-          barberia_id: barberiaData.id,
-          full_name: regName,
+        const { error: rpcError } = await supabase.rpc("register_owner", {
+          _user_id: userId,
+          _full_name: regName,
+          _barberia_nombre: barberiaName,
+          _barberia_telefono: barberiaTel || null,
+          _barberia_direccion: barberiaDir || null,
         });
-
-        // Assign owner role
-        await supabase.from("user_roles").insert({
-          user_id: userId,
-          role: "owner" as const,
-        });
+        if (rpcError) throw rpcError;
       }
 
       toast.success("Cuenta creada. Revisá tu email para confirmar.");
