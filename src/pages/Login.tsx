@@ -75,7 +75,7 @@ const Login = () => {
 
       if (regCode.trim()) {
         // JOIN existing barberia via invitation code (atomic server-side)
-        const { error: rpcError } = await supabase.rpc("register_barber", {
+        const { error: rpcError } = await (supabase.rpc as any)("register_barber", {
           _user_id: userId,
           _full_name: regName,
           _codigo: regCode.trim(),
@@ -85,7 +85,7 @@ const Login = () => {
         // CREATE new barberia (owner flow, atomic server-side)
         if (!barberiaName.trim()) throw new Error("El nombre de la barbería es obligatorio");
 
-        const { error: rpcError } = await supabase.rpc("register_owner", {
+        const { error: rpcError } = await (supabase.rpc as any)("register_owner", {
           _user_id: userId,
           _full_name: regName,
           _barberia_nombre: barberiaName,
