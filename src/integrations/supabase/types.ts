@@ -403,6 +403,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      register_barber: {
+        Args: { _codigo: string; _full_name: string; _user_id: string }
+        Returns: undefined
+      }
+      register_owner: {
+        Args: {
+          _barberia_direccion?: string
+          _barberia_nombre: string
+          _barberia_telefono?: string
+          _full_name: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "owner" | "barber"
